@@ -6,6 +6,12 @@ const { ObjectID, MongoClient } = require('mongodb')
 
 const WebSocket = require('ws')
 
+function log() {
+    if (process.env.DEBUG !== 'TRUE' || process.env.DEBUG !== 'true') {
+        return
+    }
+    console.log.apply(console, arguments)
+}
 /***
  * Utils
  */
@@ -35,7 +41,7 @@ function getCollection(collname) {
 
 MongoClient.connect(url, function(err, _client) {
   assert.equal(null, err)
-  console.log("Connected successfully to server")
+  console.log("Connected successfully to Mongo DB")
   client = _client
   db = _client.db(dbname)
 })
@@ -87,9 +93,7 @@ app.post('/*', (req, res) => {
 
     path = path.replace(/\//g, '')
 
-    if (process.env.DEBUG === 'TRUE' || process.env.DEBUG === 'true') {
-        console.info(req)
-    }
+    log(req)
 
     if ('' === path) {
         return res.sendStatus(403)
@@ -116,7 +120,7 @@ app.post('/*', (req, res) => {
 
     temp.push(body)
     if (null === db) {
-        // return res.sendStatus(200)
+        return res.sendStatus(200)
     }
 
     getCollection(path).insertMany(temp, function(err, result) {
@@ -127,7 +131,7 @@ app.post('/*', (req, res) => {
         temp.splice(0, temp.length)
     })
 
-    // return res.sendStatus(200)
+    return res.sendStatus(200)
 })
 
 const httpserver = app.listen(process.env.PORT || 9000)
@@ -158,7 +162,7 @@ const wss = new WebSocket.Server({
 wss.on('connection', function connection(ws) {
     ws.isAlive = true
     ws.on('message', function incoming(message) {
-        console.log('received: ', message)
+        log('received: ', message)
     })
     // ws.send({ url, dbname })
 })
