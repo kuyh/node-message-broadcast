@@ -120,7 +120,7 @@ app.post('/*', (req, res) => {
 
     temp.push(body)
     if (null === db) {
-        return res.sendStatus(200)
+        return res.sendStatus(202)
     }
 
     getCollection(path).insertMany(temp, function(err, result) {
@@ -131,7 +131,7 @@ app.post('/*', (req, res) => {
         temp.splice(0, temp.length)
     })
 
-    return res.sendStatus(200)
+    return res.sendStatus(202)
 })
 
 const httpserver = app.listen(process.env.PORT || 9000)
