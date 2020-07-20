@@ -1,0 +1,1 @@
+docker build -t=node_http_queue .

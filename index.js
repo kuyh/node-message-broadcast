@@ -103,11 +103,21 @@ app.post('/*', (req, res) => {
         return res.sendStatus(503)
     }
 
+    if (!body.api_app_id) {
+        console.info('[INFO] interactive message do not have api_app_id\nwill broadcast to all websockets')
+    }
+
     wss.clients.forEach((ws) => {
         // TODO : websocket alive check
         // if (ws.isAlive === false) return ws.terminate()
         // ws.ping(() => {})
-        ws.send(JSON.stringify(body))
+        if (body.api_app_id) {
+            if (body.api_app_id === ws.api_app_id) {
+                ws.send(JSON.stringify(body))
+            }
+        } else {
+            ws.send(JSON.stringify(body))
+        }
     })
 
     if (body.payload && typeof body.payload === 'string') {
@@ -131,7 +141,7 @@ app.post('/*', (req, res) => {
         temp.splice(0, temp.length)
     })
 
-    return res.sendStatus(202)
+    return res.status(202).send()
 })
 
 const httpserver = app.listen(process.env.PORT || 9000)
@@ -162,6 +172,16 @@ const wss = new WebSocket.Server({
 wss.on('connection', function connection(ws) {
     ws.isAlive = true
     ws.on('message', function incoming(message) {
+        try {
+            botinfo = JSON.parse(message)
+            if (botinfo && botinfo.profile &&botinfo.profile.api_app_id) {
+                console.log('[INFO] ws cli send app id', botinfo.profile.api_app_id)
+                ws.api_app_id = botinfo.profile.api_app_id
+            }
+        } catch (err) {
+            console.error('[ERROR] ws cli send invalid message. must be json')
+            console.error(err)
+        }
         log('received: ', message)
     })
     // ws.send({ url, dbname })
