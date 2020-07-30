@@ -52,7 +52,7 @@ MongoClient.connect(url, function(err, _client) {
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
-app.get('/*', (req, res) => {
+app.get('/action*', (req, res) => {
     let {
         path,
         query
@@ -83,9 +83,53 @@ app.get('/*', (req, res) => {
     })
 })
 
+// Our Gitlab blocks webhook
+// app.all('/gitlab/webhook*', (req, res) => {
+// })
+
+app.post('/event*', (req, res) => {
+    let {
+        path,
+        body
+    } = req
+
+    path = path.replace(/\//g, '')
+
+    log(req.body)
+
+    if ('' === path) {
+        return res.sendStatus(403)
+    }
+
+    if (undefined === body || null === body) {
+        return res.sendStatus(503)
+    }
+
+    if (body.challenge) {
+        return res.status(202).send(body.challenge)
+    }
+
+    // https://api.slack.com/authentication/verifying-requests-from-slack
+
+    wss.clients.forEach((ws) => {
+        // TODO : websocket alive check
+        // if (ws.isAlive === false) return ws.terminate()
+        // ws.ping(() => {})
+        if (body.api_app_id) {
+            if (body.api_app_id === ws.api_app_id) {
+                ws.send(JSON.stringify(body))
+            }
+        } else {
+            ws.send(JSON.stringify(body))
+        }
+    })
+
+    return res.status(200).send()
+
+})
 // For Stack Interactive Message
 const temp = []
-app.post('/*', (req, res) => {
+app.post('/action*', (req, res) => {
     let {
         path,
         body
@@ -141,7 +185,7 @@ app.post('/*', (req, res) => {
         temp.splice(0, temp.length)
     })
 
-    return res.status(202).send()
+    return res.status(200).send()
 })
 
 const httpserver = app.listen(process.env.PORT || 9000)
