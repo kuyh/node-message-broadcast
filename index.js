@@ -106,11 +106,10 @@ app.post('/event*', (req, res) => {
     }
 
     if (body.challenge) {
-        return res.status(202).send(body.challenge)
+        return res.status(200).send(body.challenge)
     }
 
     // https://api.slack.com/authentication/verifying-requests-from-slack
-
     wss.clients.forEach((ws) => {
         // TODO : websocket alive check
         // if (ws.isAlive === false) return ws.terminate()
